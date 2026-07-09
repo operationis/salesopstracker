@@ -1,42 +1,84 @@
-# SalesOps Ticket Tracker (port 5004)
+# SalesOps Ticket Tracker — Deployment
 
-A live ticketing / tracking portal for emails sent to the **salesops@bayut.sa**
-distribution group. Every inbound email to the group is a **ticket**:
+Self-contained deployment bundle for the **SalesOps Ticket Tracker** (port **5004**):
+a ticketing/tracking portal over emails sent to the **salesops@bayut.sa** group, with
+sign-in, View/Edit roles, request→approve access, tagging, and a response timeline.
 
-- **OPEN** — no reply yet from a listed team member; shows a live *time-lapsed* clock.
-- **RESPONDED** — a listed member replied; shows the *response time* (first reply − received).
+## What's in here
+| File | Purpose |
+|------|---------|
+| `tickets_app.py` | Flask app + routes + auth gate |
+| `ticket_store.py` | IMAP poll of a group-member inbox → tickets, tags, IDs, timeline |
+| `auth.py` | access list, roles, email sign-in links, request/approve flow |
+| `wsgi.py` | production entry (`wsgi:application`) + background poller |
+| `templates/` | `tickets.html` (portal), `login.html`, `request_access.html`, `admin.html` |
+| `requirements.txt` `Procfile` `Dockerfile` `start.sh` `run_local.bat` | serving scaffolding |
+| `email_config.ini.example` | template for the mail credentials (copy → `email_config.ini`) |
 
-## How it works
-`salesops@bayut.sa` is a **group** (no mailbox of its own), so the tracker polls a
-**group-member inbox over Gmail IMAP** and searches Gmail's *All Mail* for messages
-whose To/Cc includes the group. Messages are grouped into threads (Gmail thread id).
+## How it works (important context)
+`salesops@bayut.sa` is a **distribution group**, not a mailbox. The tracker polls a
+**group-member's Gmail mailbox over IMAP** (default `waheed.rasool@bayut.sa`) and treats
+every email whose To/Cc includes the group as a ticket. The **same account** sends the
+sign-in and access-approval emails (SMTP). Both are configured in `email_config.ini`.
 
-- **Polled inbox / credentials:** `email_config.ini` (`[smtp] username` + app `password`).
-  Currently `waheed.rasool@bayut.sa`. Any group member's app password works.
-- **Responders** (a reply from any of these marks a ticket RESPONDED) — edit in
-  `ticket_store.py` `RESPONDERS`: Sales Ops, Faisal Javed, Aisha Naveed, Hazim Tahir,
-  Ayman Saber, Fahad Dafer Alshehri, Waheed Tahir, Waheed Rasool.
-- **Scope:** last `WINDOW_DAYS` (90) days. `INBOUND_ONLY=True` excludes the team's own
-  alert/broadcast emails to the group (set False to track every email).
+## Prerequisites
+- Python 3.11+ (3.13 recommended).
+- A group-member Gmail/Workspace account with **IMAP enabled** and a **16-char App Password**.
+- Outbound SMTP (smtp.gmail.com:587) and IMAP (imap.gmail.com:993) egress.
+
+## Configure
+1. `cp email_config.ini.example email_config.ini` and fill in username / app-password / from_addr.
+2. Set **`PORTAL_BASE_URL`** to the URL users will actually open (so emailed sign-in and
+   approval links are clickable), e.g. `https://tickets.bayut.sa`. Defaults to `http://localhost:5004`.
+3. (Optional) edit `auth.py`: `ADMINS` (who receives requests / can manage access) and
+   `ticket_store.py`: `RESPONDERS` (members whose replies mark a ticket "responded").
 
 ## Run
-```bat
-run_tickets.bat            REM  -> http://127.0.0.1:5004  (waitress)
+```bash
+# Local / Windows
+run_local.bat                                  # waitress on :5004
+
+# Linux / server
+pip install -r requirements.txt
+PORTAL_BASE_URL=https://tickets.bayut.sa ./start.sh    # gunicorn on $PORT
+
+# Docker
+docker build -t salesops-tickets .
+docker run -d --name salesops-tickets -p 5004:5004 \
+  -e PORTAL_BASE_URL=https://tickets.bayut.sa \
+  -v salesops_data:/app \
+  -v /secure/email_config.ini:/app/email_config.ini:ro \
+  salesops-tickets
 ```
-or `python tickets_app.py` (Flask dev server). The mailbox is re-polled every 5 min
-in the background; the page also pulls fresh data every 60s and ticks the open-ticket
-clocks every second.
 
-Routes: `/` portal · `/tickets` JSON · `/refresh` force re-poll · `/healthz`.
+### Platform (Heroku/Render/etc.)
+`Procfile` defines the `web` process. Set `PORTAL_BASE_URL` and mount/persist the state
+files (below). The platform's `$PORT` is honoured.
 
-## Important limitation (data source)
-Reading one member's inbox only sees a reply if it was **reply-all to the group** (or
-authored by the polled account). A private reply straight to the requester is not
-visible, so some handled tickets may still show **Open**. For fully accurate response
-tracking across all members, switch the source to the **Gmail API with Workspace
-domain-wide delegation** (reads the group/all members) — a heavier, admin-gated setup.
+## Operational notes
+- **Run ONE worker** (`gunicorn -w 1`): the app has a single background IMAP poller +
+  in-memory cache. Scale with **threads**, not processes.
+- **First hit is gated** → users land on `/login`, enter their `@bayut.sa` email, and get a
+  one-time sign-in link. `/healthz` is public for load-balancer checks.
+- **Bootstrap admin** = the first entry in `auth.ADMINS` (waheed.rasool@bayut.sa). Admins
+  manage access at `/admin`.
 
-## Files
-`ticket_store.py` (IMAP poll + ticket logic) · `tickets_app.py` (Flask) ·
-`wsgi.py` (prod entry) · `templates/tickets.html` (portal UI) · `email_config.ini`
-(secret, git-ignored) · `tickets_cache.json` (cache, git-ignored).
+## Persistent state (MUST survive restarts/redeploys)
+These files are created at runtime in the app dir — keep them on a **persistent volume**
+(the Docker example mounts `salesops_data:/app`). Losing them has consequences:
+| File | If lost |
+|------|---------|
+| `secret.key` | all sessions + pending sign-in/approve links invalidated |
+| `access.json` | **the entire allow-list (who can log in) is wiped** |
+| `tickets_ids.json` | Ticket IDs (SO-#####) get reassigned |
+| `tickets_tags.json` | tags (Developer/SPA/RC/Refund/FYI) lost |
+| `activity_log.json` | activity history lost |
+| `tickets_cache.json` | rebuilt automatically on next poll (safe to lose) |
+
+## Secrets — do not commit
+`email_config.ini`, `secret.key`, and `access.json` are git-ignored. Provide them
+out-of-band (mounted file / platform secret), never in the image or repo.
+
+## Updating from the live folder
+This is a copy of `salesops_tickets/`. When code/UI changes upstream, re-copy:
+`auth.py`, `ticket_store.py`, `tickets_app.py`, `wsgi.py`, and `templates/*.html`.
