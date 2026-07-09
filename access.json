@@ -1,0 +1,25 @@
+{
+  "users": {
+    "waheed.rasool@bayut.sa": {
+      "role": "edit",
+      "granted_by": "waheed.rasool@bayut.sa",
+      "granted_at": "2026-07-09T12:42:21.619932+00:00"
+    },
+    "aqif.iqbal@bayut.sa": {
+      "role": "edit",
+      "granted_by": "waheed.rasool@bayut.sa",
+      "granted_at": "2026-07-09T12:42:52.549563+00:00"
+    },
+    "faisal.javed@bayut.sa": {
+      "role": "edit",
+      "granted_by": "waheed.rasool@bayut.sa",
+      "granted_at": "2026-07-09T12:43:11.374126+00:00"
+    },
+    "aymansaber.alsabahy@bayut.sa": {
+      "role": "edit",
+      "granted_by": "waheed.rasool@bayut.sa",
+      "granted_at": "2026-07-09T12:43:49.129533+00:00"
+    }
+  },
+  "requests": {}
+}
