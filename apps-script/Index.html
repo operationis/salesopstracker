@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html><head><base target="_top"><meta charset="utf-8">
+<style>
+ :root{--green:#0d7a3f;--dark:#063d24;--bg:#f4f7f5;--surface:#fff;--border:#dce6df;--muted:#5d7168;--text:#132a1f;--amber:#d97706;--red:#dc2626;--blue:#2563eb;--purple:#7c3aed;--g6:#eef5f0}
+ *{box-sizing:border-box} body{margin:0;font-family:'Segoe UI',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+ header{background:linear-gradient(135deg,var(--dark),var(--green));color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+ header h1{font-size:1.15rem;margin:0;font-weight:800} .sub{font-size:.7rem;opacity:.85;margin-top:2px}
+ .hdr-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+ .btn{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:8px;padding:7px 13px;font-size:.76rem;font-weight:700;cursor:pointer}
+ .btn:hover{background:rgba(255,255,255,.28)}
+ .rolechip{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.2)}
+ .wrap{padding:16px 22px 40px}
+ .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;margin-bottom:14px}
+ .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px;position:relative;overflow:hidden}
+ .card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c,var(--green))}
+ .card .lbl{font-size:.6rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700}
+ .card .val{font-size:1.55rem;font-weight:800;margin-top:3px;line-height:1} .card .s2{font-size:.6rem;color:var(--muted);margin-top:4px}
+ .note{font-size:.66rem;color:var(--muted);background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:7px 11px;margin-bottom:12px}
+ .toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+ .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);flex-wrap:wrap}
+ .seg button{border:0;background:transparent;padding:7px 12px;font-size:.73rem;font-weight:700;color:var(--muted);cursor:pointer;border-right:1px solid var(--border)}
+ .seg button.active{background:var(--green);color:#fff}
+ .search{flex:1;min-width:200px;max-width:340px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.8rem}
+ .meta{font-size:.66rem;color:var(--muted);margin-left:auto}
+ .bulk{display:none;align-items:center;gap:8px;background:#ecfdf3;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;margin-bottom:10px;flex-wrap:wrap}
+ .bulk.show{display:flex} .bulk .tagbtn{border:1px solid var(--border);background:#fff;border-radius:20px;padding:5px 12px;font-size:.72rem;font-weight:700;cursor:pointer}
+ .tablewrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:auto}
+ table{border-collapse:collapse;width:100%;font-size:.79rem}
+ th{text-align:left;background:var(--g6);color:var(--green);font-size:.63rem;text-transform:uppercase;letter-spacing:.4px;padding:9px 10px;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;position:sticky;top:0}
+ th.nosort{cursor:default} th .arr{opacity:.5;font-size:.7em}
+ td{padding:8px 10px;border-bottom:1px solid #eef2ef;vertical-align:top} tr:hover td{background:#fafdfb}
+ .tid{font-weight:800;color:var(--green);white-space:nowrap} .badge{display:inline-block;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:20px}
+ .badge.open{background:#fee2e2;color:#b91c1c}.badge.responded{background:#dcfce7;color:#0d7a3f}.badge.fyi{background:#e5e7eb;color:#374151}
+ .subj{font-weight:600;max-width:400px;cursor:pointer} .subj:hover{color:var(--green);text-decoration:underline}
+ .req{color:var(--muted);font-size:.72rem} .timer{font-weight:800;white-space:nowrap} .t-ok{color:var(--green)}.t-warn{color:var(--amber)}.t-bad{color:var(--red)}
+ .rtime{font-weight:800;color:var(--green)}
+ .tag{display:inline-block;font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:6px;margin:1px 2px 1px 0}
+ .tag.Developer{background:#e0f2fe;color:#075985}.tag.SPA{background:#f3e8ff;color:#6b21a8}.tag.RC{background:#dcfce7;color:#166534}.tag.Refund{background:#fee2e2;color:#991b1b}.tag.FYI{background:#e5e7eb;color:#374151}
+ body.viewonly .ck,body.viewonly #selall,body.viewonly thead th:first-child,body.viewonly tbody td:first-child,body.viewonly #bulk,body.viewonly #btnRefresh{display:none!important}
+ .empty{padding:26px;text-align:center;color:var(--muted)}
+ .ov{position:fixed;inset:0;background:rgba(6,32,20,.5);display:none;align-items:flex-start;justify-content:center;z-index:1000;padding:34px 14px}
+ .ov.open{display:flex} .modal{background:var(--surface);border-radius:14px;width:100%;max-width:820px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+ .mh{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start} .mh h3{margin:0;font-size:1rem;color:var(--dark)}
+ .mb{padding:16px 20px;overflow:auto} .close{background:none;border:0;font-size:1.5rem;cursor:pointer;color:var(--muted)}
+ .sec-t{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:6px 0 8px}
+ .preview{background:var(--g6);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:.82rem;white-space:pre-wrap;max-height:280px;overflow:auto}
+ .tl{list-style:none;margin:0;padding:0} .tl li{border-left:3px solid var(--border);padding:6px 0 12px 14px;margin-left:6px} .tl li.resp{border-left-color:var(--green)}
+ .tl .who{font-weight:700;font-size:.8rem} .tl .when{font-size:.66rem;color:var(--muted)} .tl .snip{font-size:.76rem;margin-top:3px;white-space:pre-wrap}
+ .actrow{padding:8px 0;border-bottom:1px solid #eef2ef;font-size:.78rem} .actrow .aw{font-size:.65rem;color:var(--muted)}
+ .gate{max-width:460px;margin:60px auto;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+ .gate .gh{background:linear-gradient(135deg,var(--dark),var(--green));color:#fff;padding:20px 24px} .gate .gb{padding:22px 24px}
+ .gate textarea{width:100%;box-sizing:border-box;margin-top:8px;padding:11px;border:1px solid var(--border);border-radius:9px;font-family:inherit}
+ .gate button{width:100%;margin-top:12px;background:var(--green);color:#fff;border:0;border-radius:9px;padding:12px;font-weight:700;cursor:pointer}
+ .arole{font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:20px}.arole.admin{background:#e0e7ff;color:#3730a3}.arole.edit{background:#dcfce7;color:#166534}.arole.view{background:#e0f2fe;color:#075985}
+ .abtn{border:1px solid var(--border);background:#fff;border-radius:7px;padding:5px 9px;font-size:.7rem;font-weight:700;cursor:pointer;margin-right:4px}.abtn.g{background:var(--green);color:#fff}.abtn.b{color:var(--red)}
+</style></head>
+<body>
+<!-- request-access gate (shown when user has no access) -->
+<div id="gate" style="display:none"><div class="gate">
+  <div class="gh"><h1 style="margin:0;font-size:1.1rem">Request access</h1><div class="sub" id="gate-email"></div></div>
+  <div class="gb">
+    <div style="font-size:.85rem">You don't have access to the SalesOps Ticket portal yet. Request it and an admin will approve you as View or Edit.</div>
+    <textarea id="gate-note" rows="3" placeholder="Why do you need access? (optional)"></textarea>
+    <button id="gate-btn">Request access</button>
+    <div id="gate-msg" style="font-size:.8rem;margin-top:10px;color:var(--green)"></div>
+  </div>
+</div></div>
+
+<!-- main app -->
+<div id="app" style="display:none">
+<header>
+  <div><h1>SalesOps Ticket Tracker</h1><div class="sub" id="hdr-sub">loading…</div></div>
+  <div class="hdr-r">
+    <span class="sub" id="whoami"></span>
+    <button class="btn" id="btnAdmin" style="display:none">Admin</button>
+    <button class="btn" id="btnAct">Activity Log</button>
+    <span class="sub" id="updated"></span>
+    <button class="btn" id="btnRefresh">&#8635; Refresh</button>
+  </div>
+</header>
+<div class="wrap">
+  <div class="cards" id="cards"></div>
+  <div class="note" id="srcnote"></div>
+  <div class="toolbar">
+    <div class="seg" id="seg">
+      <button data-f="open" class="active">Open</button><button data-f="responded">Responded</button><button data-f="all">All</button>
+      <button data-f="FYI">FYI</button><button data-f="Developer">Developer</button><button data-f="SPA">SPA</button>
+      <button data-f="RC">RC</button><button data-f="Refund">Refund</button><button data-f="untagged">Untagged</button>
+    </div>
+    <input class="search" id="search" placeholder="Search subject or from…">
+    <span class="meta" id="count"></span>
+  </div>
+  <div class="bulk" id="bulk"><b id="bulkn">0 selected</b>&nbsp;move to:
+    <span class="tagbtn" data-tag="Developer">Developer</span><span class="tagbtn" data-tag="SPA">SPA</span>
+    <span class="tagbtn" data-tag="RC">RC</span><span class="tagbtn" data-tag="Refund">Refund</span>
+    <span class="tagbtn" data-tag="FYI">FYI Only</span><span class="tagbtn" data-clear="1" style="color:var(--red)">Clear tags</span>
+  </div>
+  <div class="tablewrap"><table><thead><tr>
+    <th class="nosort"><input type="checkbox" id="selall"></th>
+    <th data-s="ticket_id">Ticket <span class="arr"></span></th><th data-s="status">Status <span class="arr"></span></th>
+    <th data-s="subject">Subject <span class="arr"></span></th><th data-s="requester">From <span class="arr"></span></th>
+    <th data-s="received">Received <span class="arr"></span></th><th data-s="time">Lapsed / Response <span class="arr"></span></th>
+    <th data-s="responder">Responded By <span class="arr"></span></th><th class="nosort">Tags</th><th data-s="messages">Msgs <span class="arr"></span></th>
+  </tr></thead><tbody id="rows"><tr><td colspan="10" class="empty">Loading…</td></tr></tbody></table></div>
+</div>
+</div>
+
+<div class="ov" id="ov"><div class="modal">
+  <div class="mh"><div><h3 id="m-subj"></h3><div class="req" id="m-meta"></div></div><button class="close" id="m-close">&times;</button></div>
+  <div class="mb"><div class="sec-t">Latest email</div><div class="preview" id="m-prev">Loading…</div>
+  <div class="sec-t" style="margin-top:16px">Response timeline</div><ul class="tl" id="m-tl"></ul></div>
+</div></div>
+
+<div class="ov" id="ov2"><div class="modal">
+  <div class="mh"><div><h3>Activity Log</h3><div class="req">Portal actions — most recent first</div></div><button class="close" id="a-close">&times;</button></div>
+  <div class="mb" id="a-body">Loading…</div>
+</div></div>
+
+<div class="ov" id="ov3"><div class="modal">
+  <div class="mh"><div><h3>Access Admin</h3><div class="req">Manage who can view/edit</div></div><button class="close" id="ad-close">&times;</button></div>
+  <div class="mb" id="ad-body">Loading…</div>
+</div></div>
+
+<script>
+var DATA=null,ME=null,FILTER='open',Q='',SORT='received',DIR=-1,SEL={};
+var el=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmtDur(s){s=Math.max(0,Math.floor(s));var d=Math.floor(s/86400);s%=86400;var h=Math.floor(s/3600);s%=3600;var m=Math.floor(s/60),ss=s%60;
+ if(d>0)return d+'d '+h+'h '+m+'m';if(h>0)return h+'h '+m+'m '+('0'+ss).slice(-2)+'s';return m+'m '+('0'+ss).slice(-2)+'s'}
+function sla(sec){var h=sec/3600;return h<4?'t-ok':(h<24?'t-warn':'t-bad')}
+function ksa(iso){if(!iso)return'';var d=new Date(iso);return new Date(d.getTime()+3*3600000).toISOString().slice(0,16).replace('T',' ')}
+
+function boot(){ google.script.run.withSuccessHandler(onInit).withFailureHandler(onErr).getInit(); }
+function onErr(e){ el('rows').innerHTML='<tr><td colspan=10 class=empty>Error: '+esc(e.message)+'</td></tr>'; }
+function onInit(res){
+  ME=res.me;
+  if(res.needAccess){ el('gate').style.display=''; el('app').style.display='none'; el('gate-email').textContent=ME.email; return; }
+  el('gate').style.display='none'; el('app').style.display='';
+  el('whoami').innerHTML=esc(ME.email)+' <span class="rolechip">'+(ME.role||'').toUpperCase()+'</span>';
+  if(ME.isAdmin) el('btnAdmin').style.display='';
+  if(!ME.canEdit) document.body.classList.add('viewonly');
+  DATA=res.data; render();
+}
+
+function renderCards(){
+  var overdue=(DATA.tickets||[]).filter(function(t){return t.status==='open'&&!t.fyi&&(Date.now()-new Date(t.received))/3600000>24}).length;
+  var c=[['Total',DATA.total,'inbound tickets','var(--dark)'],['Open',DATA.open,'awaiting reply (excl FYI)','var(--red)'],
+    ['Responded',DATA.responded,'team replied','var(--green)'],['Avg Response',fmtDur(DATA.avg_response_secs||0),'excl FYI','var(--amber)'],
+    ['FYI Only',DATA.fyi||0,'info — not counted','var(--purple)'],['Overdue &gt;24h',overdue,'open beyond 24h','var(--red)']];
+  el('cards').innerHTML=c.map(function(x){return '<div class="card" style="--c:'+x[3]+'"><div class="lbl">'+x[0]+'</div><div class="val">'+x[1]+'</div><div class="s2">'+x[2]+'</div></div>'}).join('');
+}
+function pass(t){
+  if(FILTER==='open'){if(!(t.status==='open'&&!t.fyi))return false}
+  else if(FILTER==='responded'){if(!(t.status==='responded'&&!t.fyi))return false}
+  else if(FILTER==='untagged'){if((t.tags||[]).length)return false}
+  else if(FILTER!=='all'){if((t.tags||[]).indexOf(FILTER)<0)return false}
+  if(Q){var q=Q.toLowerCase();return (t.subject||'').toLowerCase().indexOf(q)>=0||(t.requester_addr||'').toLowerCase().indexOf(q)>=0||(t.requester_name||'').toLowerCase().indexOf(q)>=0||(t.ticket_id||'').toLowerCase().indexOf(q)>=0}
+  return true;
+}
+function sv(t){switch(SORT){case 'ticket_id':return parseInt((t.ticket_id||'0').split('-')[1]||'0',10);case 'status':return t.status;
+  case 'subject':return (t.subject||'').toLowerCase();case 'requester':return (t.requester_name||'').toLowerCase();
+  case 'received':return new Date(t.received).getTime();case 'time':return t.status==='open'?(Date.now()-new Date(t.received)):(t.response_secs*1000||0);
+  case 'responder':return (t.responder||'').toLowerCase();case 'messages':return t.messages||0}return 0}
+function renderRows(){
+  var list=(DATA.tickets||[]).filter(pass);
+  list.sort(function(a,b){var x=sv(a),y=sv(b);return (x<y?-1:x>y?1:0)*DIR});
+  var total=list.length;list=list.slice(0,400);
+  el('count').textContent='Showing '+list.length+' of '+total+(total>400?' (capped 400 — search)':'');
+  var tb=el('rows');
+  if(!list.length){tb.innerHTML='<tr><td colspan=10 class=empty>No tickets match.</td></tr>';return}
+  tb.innerHTML=list.map(function(t){
+    var badge=t.fyi?'<span class="badge fyi">FYI</span>':'<span class="badge '+t.status+'">'+(t.status==='open'?'OPEN':'RESPONDED')+'</span>';
+    var timer=t.status==='open'?'<span class="timer" data-r="'+t.received+'"></span>':'<span class="rtime">'+fmtDur(t.response_secs)+'</span>';
+    var tags=(t.tags||[]).map(function(x){return '<span class="tag '+x+'">'+x+'</span>'}).join('');
+    return '<tr><td><input type=checkbox class=ck data-id="'+t.thrid+'" '+(SEL[t.thrid]?'checked':'')+'></td>'
+      +'<td class=tid>'+esc(t.ticket_id)+'</td><td>'+badge+'</td>'
+      +'<td class=subj data-id="'+t.thrid+'">'+esc(t.subject)+'</td>'
+      +'<td>'+esc(t.requester_name)+'<div class=req>'+esc(t.requester_addr)+'</div></td>'
+      +'<td style="white-space:nowrap">'+ksa(t.received)+'</td><td>'+timer+'</td>'
+      +'<td>'+(t.responder?esc(t.responder):'<span class=req>—</span>')+'</td>'
+      +'<td>'+(tags||'<span class=req>—</span>')+'</td><td style="text-align:center">'+t.messages+'</td></tr>';
+  }).join('');
+  tick();syncArr();
+}
+function tick(){var now=Date.now();var els=document.querySelectorAll('.timer[data-r]');for(var i=0;i<els.length;i++){var s=(now-new Date(els[i].getAttribute('data-r')))/1000;els[i].textContent=fmtDur(s);els[i].className='timer '+sla(s)}}
+setInterval(tick,1000);
+function syncArr(){var ths=document.querySelectorAll('th[data-s]');for(var i=0;i<ths.length;i++){var a=ths[i].querySelector('.arr');a.textContent=ths[i].getAttribute('data-s')===SORT?(DIR>0?'▲':'▼'):''}}
+function bulk(){var n=0;for(var k in SEL)if(SEL[k])n++;el('bulk').className='bulk'+(n?' show':'');el('bulkn').textContent=n+' selected'}
+function render(){
+  el('hdr-sub').innerHTML='Emails to <b>'+esc(DATA.group)+'</b> · last '+DATA.window_days+' days';
+  el('updated').textContent=DATA.generated?'Updated '+ksa(DATA.generated)+' KSA':'';
+  el('srcnote').innerHTML='&#9432; Reads the group mailbox via Gmail. A ticket is <b>Responded</b> when a team reply appears in the thread. FYI is excluded from Open &amp; response-time. '+(DATA.excluded_internal||0)+' internal/system emails excluded.';
+  renderCards();renderRows();
+}
+
+el('seg').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;FILTER=b.getAttribute('data-f');
+  var bs=el('seg').getElementsByTagName('button');for(var i=0;i<bs.length;i++)bs[i].className=(bs[i]===b?'active':'');renderRows()});
+el('search').addEventListener('input',function(e){Q=e.target.value.trim();renderRows()});
+var ths=document.querySelectorAll('th[data-s]');for(var i=0;i<ths.length;i++)ths[i].addEventListener('click',function(){var s=this.getAttribute('data-s');if(SORT===s)DIR=-DIR;else{SORT=s;DIR=(s==='subject'||s==='requester'||s==='responder'||s==='status')?1:-1}renderRows()});
+el('rows').addEventListener('change',function(e){var c=e.target.closest('.ck');if(!c)return;SEL[c.getAttribute('data-id')]=c.checked;bulk()});
+el('selall').addEventListener('change',function(e){var cs=document.querySelectorAll('.ck');for(var i=0;i<cs.length;i++){cs[i].checked=e.target.checked;SEL[cs[i].getAttribute('data-id')]=e.target.checked}bulk()});
+el('bulk').addEventListener('click',function(e){var b=e.target.closest('[data-tag],[data-clear]');if(!b)return;
+  var ids=[];for(var k in SEL)if(SEL[k])ids.push(k);if(!ids.length)return;
+  var tag=b.getAttribute('data-tag'),clear=!!b.getAttribute('data-clear');
+  el('bulkn').textContent='saving…';
+  google.script.run.withSuccessHandler(function(d){DATA=d;SEL={};el('selall').checked=false;bulk();render()})
+    .withFailureHandler(function(er){alert(er.message);bulk()}).apiSetTags(ids,tag,clear);
+});
+function openThread(id){el('ov').className='ov open';el('m-prev').textContent='Loading…';el('m-tl').innerHTML='';el('m-subj').textContent='';el('m-meta').textContent='';
+  google.script.run.withSuccessHandler(function(d){if(d.error){el('m-prev').textContent=d.error;return}
+    el('m-subj').textContent=d.ticket_id+' · '+d.subject;
+    el('m-meta').innerHTML='From '+esc(d.requester)+' &lt;'+esc(d.requester_addr)+'&gt; '+(d.tags||[]).map(function(x){return '<span class="tag '+x+'">'+x+'</span>'}).join('');
+    el('m-prev').textContent=d.latest_body||'(no text body)';
+    el('m-tl').innerHTML=(d.timeline||[]).map(function(m){return '<li class="'+(m.is_responder?'resp':'')+'"><div class=who>'+esc(m.from_name||m.from_addr)+(m.is_responder?' <span class="tag RC">team</span>':'')+'</div><div class=when>'+ksa(m.date)+' KSA</div><div class=snip>'+esc(m.summary||'')+'</div></li>'}).join('');
+  }).withFailureHandler(function(er){el('m-prev').textContent=er.message}).apiThread(id);
+}
+el('rows').addEventListener('click',function(e){var s=e.target.closest('.subj');if(s)openThread(s.getAttribute('data-id'))});
+el('m-close').addEventListener('click',function(){el('ov').className='ov'});el('ov').addEventListener('click',function(e){if(e.target===el('ov'))el('ov').className='ov'});
+el('btnAct').addEventListener('click',function(){el('ov2').className='ov open';el('a-body').textContent='Loading…';
+  google.script.run.withSuccessHandler(function(d){var L=d.log||[];el('a-body').innerHTML=L.length?L.map(function(a){return '<div class=actrow><b>'+esc(a.user)+'</b> — '+esc(a.action)+' '+esc(a.detail||'')+'<div class=aw>'+ksa(a.ts)+' KSA</div></div>'}).join(''):'<div class=empty>No activity yet.</div>'}).apiActivity()});
+el('a-close').addEventListener('click',function(){el('ov2').className='ov'});el('ov2').addEventListener('click',function(e){if(e.target===el('ov2'))el('ov2').className='ov'});
+el('btnRefresh').addEventListener('click',function(){var b=el('btnRefresh');b.textContent='Refreshing…';b.disabled=true;
+  google.script.run.withSuccessHandler(function(d){DATA=d;render();b.innerHTML='&#8635; Refresh';b.disabled=false}).withFailureHandler(function(){b.innerHTML='&#8635; Refresh';b.disabled=false}).apiRefresh()});
+
+// admin
+el('btnAdmin').addEventListener('click',function(){el('ov3').className='ov open';el('ad-body').textContent='Loading…';
+  google.script.run.withSuccessHandler(renderAdmin).apiAdminList()});
+el('ad-close').addEventListener('click',function(){el('ov3').className='ov'});el('ov3').addEventListener('click',function(e){if(e.target===el('ov3'))el('ov3').className='ov'});
+function renderAdmin(d){
+  var reqs='<div class="sec-t">Pending requests ('+d.requests.length+')</div>';
+  reqs+= d.requests.length? d.requests.map(function(r){return '<div class=actrow>'+esc(r.email)+' <span class=aw>'+esc(r.note||'')+'</span><div style="margin-top:4px">'
+    +'<button class="abtn g" onclick="aSet(\''+r.email+'\',\'view\')">Approve View</button><button class="abtn g" onclick="aSet(\''+r.email+'\',\'edit\')">Approve Edit</button><button class="abtn b" onclick="aDeny(\''+r.email+'\')">Deny</button></div></div>'}).join('') : '<div class=req>None</div>';
+  var us='<div class="sec-t" style="margin-top:14px">Users ('+d.users.length+')</div>';
+  us+= d.users.map(function(u){return '<div class=actrow>'+esc(u.email)+' <span class="arole '+u.role+'">'+u.role+'</span>'
+    +(u.role!=='admin'?' <span style="float:right"><button class=abtn onclick="aSet(\''+u.email+'\',\'view\')">View</button><button class=abtn onclick="aSet(\''+u.email+'\',\'edit\')">Edit</button><button class="abtn b" onclick="aRem(\''+u.email+'\')">Remove</button></span>':' <span class=aw style="float:right">bootstrap</span>')+'</div>'}).join('');
+  var add='<div style="margin-top:14px;display:flex;gap:8px"><input id="adnew" class=search placeholder="add person@bayut.sa" style="max-width:none"><button class="abtn g" onclick="aAdd(\'view\')">Add View</button><button class="abtn g" onclick="aAdd(\'edit\')">Add Edit</button></div>';
+  el('ad-body').innerHTML=reqs+us+add;
+}
+function aSet(email,role){google.script.run.withSuccessHandler(function(){google.script.run.withSuccessHandler(renderAdmin).apiAdminList()}).withFailureHandler(function(e){alert(e.message)}).apiAdminSetRole(email,role)}
+function aRem(email){if(confirm('Remove '+email+'?'))google.script.run.withSuccessHandler(function(){google.script.run.withSuccessHandler(renderAdmin).apiAdminList()}).apiAdminRemove(email)}
+function aDeny(email){google.script.run.withSuccessHandler(function(){google.script.run.withSuccessHandler(renderAdmin).apiAdminList()}).apiAdminDeny(email)}
+function aAdd(role){var e=el('adnew').value.trim();if(e)aSet(e,role)}
+
+// request access gate
+el('gate-btn').addEventListener('click',function(){var b=el('gate-btn');b.disabled=true;b.textContent='Sending…';
+  google.script.run.withSuccessHandler(function(){el('gate-msg').textContent='✓ Request sent. You\'ll get an email when approved.';b.textContent='Request sent'})
+    .withFailureHandler(function(e){el('gate-msg').style.color='#dc2626';el('gate-msg').textContent=e.message;b.disabled=false;b.textContent='Request access'})
+    .apiRequestAccess(el('gate-note').value.trim())});
+
+boot();
+// periodic soft refresh — re-pulls the cached ticket list (cheap; no re-scan)
+setInterval(function(){ if(ME && ME.canView) google.script.run.withSuccessHandler(function(res){ if(res && res.data){ DATA=res.data; render(); } }).getInit(); }, 120000);
+</script>
+</body></html>
