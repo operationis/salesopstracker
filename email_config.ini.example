@@ -1,0 +1,14 @@
+; Copy this file to email_config.ini and fill in real values.
+; The SAME Gmail/Workspace account is used for BOTH:
+;   - IMAP: reading the mailbox to find emails sent to the salesops group
+;   - SMTP: sending the sign-in links and access-request/approval emails
+;
+; It must be a GROUP MEMBER's mailbox (e.g. waheed.rasool@bayut.sa) that receives
+; the salesops@bayut.sa group's mail, with IMAP enabled and a 16-char App Password.
+[smtp]
+host = smtp.gmail.com
+port = 587
+username = waheed.rasool@bayut.sa
+password = xxxx xxxx xxxx xxxx
+from_addr = waheed.rasool@bayut.sa
+use_tls = true

@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Access Admin · SalesOps Ticket Portal</title>
+<style>
+ body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#f4f7f5;color:#132a1f}
+ header{background:linear-gradient(135deg,#063d24,#0d7a3f);color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center}
+ header h1{margin:0;font-size:1.1rem} a{color:#0d7a3f} header a{color:#fff;font-size:.8rem}
+ .wrap{padding:20px 22px;max-width:900px}
+ h2{font-size:.9rem;color:#063d24;border-left:4px solid #0d7a3f;padding-left:8px;margin:22px 0 10px}
+ table{border-collapse:collapse;width:100%;background:#fff;border:1px solid #dce6df;border-radius:10px;overflow:hidden;font-size:.83rem}
+ th{background:#eef5f0;color:#0d7a3f;text-align:left;padding:9px 12px;font-size:.66rem;text-transform:uppercase;letter-spacing:.4px}
+ td{padding:9px 12px;border-top:1px solid #eef2ef}
+ .role{font-size:.62rem;font-weight:800;padding:2px 8px;border-radius:20px}
+ .role.admin{background:#e0e7ff;color:#3730a3}.role.edit{background:#dcfce7;color:#166534}.role.view{background:#e0f2fe;color:#075985}
+ button{border:1px solid #dce6df;background:#fff;border-radius:7px;padding:5px 10px;font-size:.72rem;font-weight:700;cursor:pointer;margin-right:4px}
+ button.g{background:#0d7a3f;color:#fff;border-color:#0d7a3f}button.b{color:#dc2626;border-color:#fca5a5}
+ .add{margin-top:10px;background:#fff;border:1px solid #dce6df;border-radius:10px;padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+ .add input{padding:8px 10px;border:1px solid #dce6df;border-radius:8px;font-size:.82rem}
+ .empty{padding:14px;color:#5d7168;font-size:.82rem}
+</style></head><body>
+<header><h1>Access Admin</h1><div><a href="/">← Portal</a> &nbsp; <a href="/logout">Logout</a></div></header>
+<div class="wrap">
+  <h2>Pending requests ({{ requests|length }})</h2>
+  <table><thead><tr><th>Email</th><th>Requested</th><th>Note</th><th>Action</th></tr></thead><tbody>
+  {% for r in requests %}
+    <tr data-email="{{ r.email }}">
+      <td>{{ r.email }}</td><td>{{ r.requested_at[:16] }}</td><td>{{ r.note }}</td>
+      <td>
+        <button class="g" onclick="setRole('{{ r.email }}','view')">Approve View</button>
+        <button class="g" onclick="setRole('{{ r.email }}','edit')">Approve Edit</button>
+        <button class="b" onclick="deny('{{ r.email }}')">Deny</button>
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="4" class="empty">No pending requests.</td></tr>{% endfor %}
+  </tbody></table>
+
+  <h2>Users ({{ users|length }})</h2>
+  <table><thead><tr><th>Email</th><th>Role</th><th>Granted by</th><th>Change</th></tr></thead><tbody>
+  {% for u in users %}
+    <tr data-email="{{ u.email }}">
+      <td>{{ u.email }}</td>
+      <td><span class="role {{ u.role }}">{{ u.role }}</span></td>
+      <td>{{ u.granted_by }}</td>
+      <td>
+        {% if u.role != 'admin' %}
+        <button onclick="setRole('{{ u.email }}','view')">Set View</button>
+        <button onclick="setRole('{{ u.email }}','edit')">Set Edit</button>
+        <button class="b" onclick="remove('{{ u.email }}')">Remove</button>
+        {% else %}<span class="empty" style="padding:0">bootstrap admin</span>{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody></table>
+
+  <div class="add">
+    <input id="ne" type="email" placeholder="add person@bayut.sa">
+    <button class="g" onclick="add('view')">Add · View</button>
+    <button class="g" onclick="add('edit')">Add · Edit</button>
+  </div>
+</div>
+<script>
+function post(url,body,cb){ fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json()).then(cb); }
+function setRole(email,role){ post('/admin/set-role',{email,role},()=>location.reload()); }
+function remove(email){ if(confirm('Remove '+email+'?')) post('/admin/remove',{email},()=>location.reload()); }
+function deny(email){ post('/admin/deny',{email},()=>location.reload()); }
+function add(role){ const e=document.getElementById('ne').value.trim(); if(!e)return; post('/admin/set-role',{email:e,role},()=>location.reload()); }
+</script>
+</body></html>
